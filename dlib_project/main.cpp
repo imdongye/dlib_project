@@ -15,18 +15,17 @@ class Student {
 private:
 	long id;
 	string name;
-	int mid;
-	int fin;
+	double mid;
+	double fin;
 public:
 	Student()
-		: id(0), name(""), mid(0), fin(0) {}
-	Student(long _id, string _name, int _mid = 0, int _fin = 0)
+		: id(0), name(""), mid(0.0), fin(0.0) {}
+	Student(long _id, string _name, double _mid = 0.0, double _fin = 0.0)
 		: id(_id), name(_name), mid(_mid), fin(_fin) { }
 	~Student() {
 
 	}
-
-	// private멤버 ostream을 수정하기위해서 friend 함수로 정의
+	// friend is for editing ostream
 	friend ostream& operator << (ostream& os, const Student& s) {
 		os << "[" << s.id << ", " << s.name << ", " << s.mid << ", " << s.fin << ", " << s.getAverage() << "]";
 		return os;
@@ -38,16 +37,16 @@ public:
 		return name;
 	}
 	const double getAverage() const {
-		return (mid + fin) / 2.0;
+		double sum = mid + fin;
+		return sum / 2.0;
 	}
-	void setMid(int _mid) {
+	void setMid(double _mid) {
 		mid = _mid;
 	}
-	void setFin(int _fin) {
+	void setFin(double _fin) {
 		fin = _fin;
 	}
 };
-
 template <typename T> void print(const T& list) {
 	for (const auto& item : list) {
 		cout << item << " ";
@@ -59,12 +58,11 @@ int main()
 {
 	//dtd::dvec<Student> students = { {123, "John"}, {312, "Jane"}, {111, "Jacob"}, {311, "Jack"} };
 	dtd::dvec<Student> students;
-
-	students.push_back({ 201821089, "임동예", 50, 60 });
-	students.push_back({ 201712312, "김동예", 80, 70 });
-	students.push_back({ 201112312, "이동예", 47, 19 });
-	students.push_back({ 202212313, "박동예", 48, 19 });
-	students.push_back({ 202212313, "신동예", 77, 66 });
+	//students.push_back({ 201821089, "임동예", 50, 60 });
+	//students.push_back({ 201712312, "김동예", 80, 70 });
+	//students.push_back({ 201112312, "이동예", 47, 19 });
+	//students.push_back({ 202212313, "박동예", 48, 19 });
+	//students.push_back({ 202212313, "신동예", 77, 66 });
 
 	bool termination = false;
 	while (!termination)
@@ -78,7 +76,7 @@ int main()
 			cout << "Enter ID, name, mid, final scores: ";
 			long id;
 			string name;
-			int mid, fin;
+			double mid, fin;
 			cin >> id >> name >> mid >> fin;
 			Student student(id, name, mid, fin); // student = {id, name..};
 			students.push_back(student);
@@ -87,8 +85,8 @@ int main()
 			cout << "Enter ID: ";
 			long id;
 			cin >> id;
-			// remove_if에서 student를 수정하지 못해서 remove_if의 반환값으로 erase함수를 다시 호출함
-			// ??find_if를 안쓰는이유??
+			// reason of using erase(remove_if is remove_if can't editing student class
+			// then if i can use find_if instead of remove_if?
 			students.erase(remove_if(students.begin(), students.end(), [id](const Student& a) { return a.getId() == id; }));
 		} break;
 		case 3: { // delete by name
@@ -114,7 +112,7 @@ int main()
 			student->setFin(fin);
 		} break;
 		case 6: { // sort by id
-			// ??remove_if는 student를 수정하지 못하는데 똑같이 이터레이터를 받는 sort는 어떻게 수정하는지??
+			// remove_if can't editing but how sort method can editing student class?
 			sort(students.begin(), students.end(), [](const Student& a, const Student& b) {return a.getId() < b.getId(); });
 		} break;
 		case 7: { // sort by average
@@ -127,7 +125,9 @@ int main()
 			cout << "Wrong operation code !!\n";
 		} break;
 		}
-		if (cin.fail()) { cin.clear(); cin.ignore(10, '\n'); } // 입력잘못했을때 무한루프 빠짐 -> 입력버퍼 지워주기
+		// wrong input make infinity that above roop
+		// so erase input state and buffer to clear
+		if (cin.fail()) { cin.clear(); cin.ignore(10, '\n'); }
 	}
 	return 0;
 }
