@@ -1,6 +1,6 @@
 //
-//	main.cpp
-//	Build my data structures
+//  main.cpp
+//  Build my data structures
 //
 //  Create by 임동예 on 2021/04/17.
 //
@@ -56,14 +56,17 @@ template <typename T> void print(const T& list) {
 
 int main()
 {
+	//c++ array initialization, struct나 class에 내용을 전달하는 방식은 c++ struct initialization
 	//dtd::dvec<Student> students = { {123, "John"}, {312, "Jane"}, {111, "Jacob"}, {311, "Jack"} };
 	dtd::dvec<Student> students;
-	//students.push_back({ 201821089, "임동예", 50, 60 });
-	//students.push_back({ 201712312, "김동예", 80, 70 });
-	//students.push_back({ 201112312, "이동예", 47, 19 });
-	//students.push_back({ 202212313, "박동예", 48, 19 });
-	//students.push_back({ 202212313, "신동예", 77, 66 });
-
+	students.push_back({ 1, "신동예", 77, 66 });
+	students.push_back({ 2, "임동예", 50, 60 });
+	students.push_back({ 3, "킼동예", 77, 66 });
+	students.push_back({ 2, "김동예", 80, 70 });
+	students.push_back({ 4, "이동예", 47, 19 });
+	students.push_back({ 5, "박동예", 48, 19 });
+	
+	
 	bool termination = false;
 	while (!termination)
 	{
@@ -86,14 +89,14 @@ int main()
 			long id;
 			cin >> id;
 			// reason of using erase(remove_if is remove_if can't editing student class
-			// then if i can use find_if instead of remove_if?
-			students.erase(remove_if(students.begin(), students.end(), [id](const Student& a) { return a.getId() == id; }));
+			// then if i can use find_if instead of remove_if? yes but remove_if is sort back find things
+			students.erase_with_remove_if(remove_if(students.begin(), students.end(), [id](const Student& a) { return a.getId() == id; }));
 		} break;
 		case 3: { // delete by name
 			cout << "Enter Name: ";
 			string name;
 			cin >> name;
-			students.erase(remove_if(students.begin(), students.end(), [name](const Student& a) { return a.getName().compare(name) == 0; }));
+			students.erase_with_remove_if(remove_if(students.begin(), students.end(), [name](const Student& a) { return a.getName().compare(name) == 0; }));
 		} break;
 		case 4: { // update mid by id
 			cout << "Enter ID and Midterm Score:";
@@ -112,7 +115,7 @@ int main()
 			student->setFin(fin);
 		} break;
 		case 6: { // sort by id
-			// remove_if can't editing but how sort method can editing student class?
+			// remove_if can't editing but how sort method can editing student class? iterator can edit position
 			sort(students.begin(), students.end(), [](const Student& a, const Student& b) {return a.getId() < b.getId(); });
 		} break;
 		case 7: { // sort by average

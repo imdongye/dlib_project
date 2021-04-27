@@ -1,6 +1,6 @@
 //
-//	dlib.h
-//	Build my data structures
+//  dlib.h
+//  Build my data structures
 //
 //  Create by ÀÓµ¿¿¹ on 2021/04/17.
 //
@@ -155,13 +155,21 @@ namespace dtd
 			data[n - 1] = a;
 		}
 		bool erase(T* it) {
-			// O(N)
 			if (it == end())
 				return false;
+			// O(N)
 			for (; it + 1 != end(); it++) {
 				*it = *(it + 1);
 			}
 			resize(n - 1);
+			return true;
+		}
+		bool erase_with_remove_if(T* it) {
+			// remove_if is finded ojb sort back and return leftest find obj 
+			int en = end() - it; // how much erase obj, it can't use with find_if
+			if (it == end())
+				return false;
+			resize(n - en);
 			return true;
 		}
 		bool erase(T* begin, T* end) {
