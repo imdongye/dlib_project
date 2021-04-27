@@ -77,6 +77,13 @@ namespace dtd
 			}
 			size++;
 		}
+		T pop_front() {
+			T front_data = front->data;
+			node<T>* next = front->next;
+			del front;
+			front = next;
+			return front_data;
+		}
 		const T& operator [] (const size_t n) const {
 			return move_node(n)->data;
 		}
