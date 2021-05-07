@@ -10,6 +10,9 @@
 #define dlib_hpp
 
 #include <iostream>
+#include <queue>
+using namespace std;
+
 
 // old method
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
@@ -80,7 +83,7 @@ namespace dtd
 		T pop_front() {
 			T front_data = front->data;
 			node<T>* next = front->next;
-			del front;
+			delete front;
 			front = next;
 			return front_data;
 		}
@@ -198,6 +201,7 @@ namespace dtd
 	// degrees : number of children
 	// level : distance from the root
 	// depth of tree : level of the deepest leaf
+	// subtree
 
 	class dtree {
 		class node {
@@ -214,17 +218,48 @@ namespace dtd
 		// 재귀함수로 찾기위해서는 매개변수로 현재의 root를 받아와야하고 그렇게되면 find함수안에서 자기자신을 참조하지않아 this포인터도 사용하지 않아서
 		// static 정적 함수로 선언할수있고 객체마다 함수를 가지고 있지 않아도 돼서 메모리를 오버헤드를 줄일수있다(?) 그리고 외부에는 pos만 받는 함수를 노출시켜
 		// 사용편의성도 챙길수있다.
-		static node* find(node* root, const std::string& pos) {
-			if (root == nullptr)
+		// 
+		// * Pre-order traversal 부모먼저 검색 - 비교후 for
+		// * Post-order traversal 자식먼저 검색 - for 후 비교
+		// * Level order traversal 윗층부터 아래층으로 탐색 ( 큐 사용 )
+		// * In-order traversal 우선순위가 왼쪽 부모 오른쪽 ( 내림차순으로 출력 )
+		// 
+		// 깊이 Depth : pre, post, in
+		// 너비 Breath : level
+
+		// * Pre-order traversal
+		static node* find(node* r, const std::string& pos) {
+			if (r == nullptr)
 				return nullptr;
-			if (root->position.compare(pos) == 0)
-				return root;
-			//recursion trivial solution
-			for (node* child : root->branches) {
+			if (r->position.compare(pos) == 0)
+				return r;
+			for (node* child : r->branches) {
 				node* found = find(child, pos);
 				if (found != nullptr) return found;
 			}
 			return nullptr;
+		}
+		// * post
+		static void print(node* r) {
+			for (node* child : r->branches)
+				print(child);
+			cout << r->position << endl;
+		}
+		// * level
+		static node* print2(node* r) {
+			if (!r) return nullptr;
+			queue<node*> q; // stack 이라면?
+			q.push(r);
+			while (!q.empty()) {
+				const node* n = q.front();
+				q.pop();
+				cout << n->position << " " << endl;
+				for (node* branch : n->branches)
+					q.push(branch);
+			}
+		}
+		void print() {
+			print(root);
 		}
 	public:
 		dtree(const std::string& pos) {
@@ -233,11 +268,79 @@ namespace dtd
 		node* find(const std::string& pos) {
 			return find(root, pos);
 		}
-		bool addSub(const std::string& manager, const std::string& sub) {
+		bool addSub(const std::string& manager, const std::string& pos) {
 			node* managerNode = find(manager);
 			if (!managerNode) return false;
-			managerNode->branches.push_back(new node(sub));
+			managerNode->branches.push_back(new node(pos));
+			return true;
 		}
 	};
+
+	// Binary Tree ( N-ary Tree )
+	// 빠른 탐색, 빠른 추가삭제
+	// 왼쪽 자식은 작고 오른쪽자식은 크다
+	class BST {
+	public:
+		class Node {
+		public:
+			int val;
+			Node* left = nullptr;
+			Node* right = nullptr;
+			friend BST;
+		};
+	private:
+		Node* root = nullptr;
+		static Node* find_rec(Node* node, int key) {
+			if (!node) return nullptr;
+			if (key == node->val)
+				return find_rec(node->left, key);
+			else
+				return find_rec(node->right, key);
+		}
+		// in-order
+		template<typename Func> // 함수포인터, 람다 모두 사용가능
+		static void vist_rec(Node* node, Func func) {
+
+		}
+		static Node* leftSuccessor(Node* node) {
+			return node;
+		}
+		// remove할때 지우는공간을 successor(leaf)에서 복사하고 leaf는 지우기
+		// 자식이 하나이면 부모한테 자식으로 바뀌었다고 알려줌
+		// 지울공간이 leaf인경우 대체하지않고 부모의 dangling pointer을 처리하고 지움
+		static Node* remove_rec(Node* node, int key) {
+			if (!node)
+				return nullptr;
+			if (key < node->val)
+				node->left = remove_rec(node->left, key);
+			else if (key > node->val)
+				node->right = remove_rec(node->right, key);
+			else if (!node->left) {
+				Node* ret = node->right;
+				delete node;
+				return ret;
+			} else if (!node->right) {
+				Node* ret = node->left;
+				delete node;
+				return ret;
+			} else {
+				Node* succNode = leftSuccessor(node->right);
+				Node* left = node->left;
+				Node* right = node->right;
+				*node = *succNode;
+				node->left = left;
+				node->right = right;
+				node->right = remove_rec(node->right, succNode->val);
+			}
+			return node;
+		}
+		public:
+		void insert(int value) {
+		}
+		template<typename Func>
+		void visit(Func func) {
+		}
+	};
+
 }
 #endif // !dlib_hpp
