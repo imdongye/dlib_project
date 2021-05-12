@@ -313,22 +313,21 @@ namespace dtd
 			if (node == nullptr)
 				return;
 			if (node->left)
-				visit_rec(node->left, func)
+				visit_rec(node->left, func);
 			func(node->val);
 			if (node->right)
-				visit_rec(node->right, func)
-
+				visit_rec(node->right, func);
 		}
 		// 지울 노드의, 오른쪽서브트리중 가장 왼쪽 or 왼쪽 서브트리중 가장 오른쪽
-		static Node<T>* rightSuccessor(Node<T>* start) {
+		static Node<T>* leftSuccessor(Node<T>* start) {
 			if (start->left)
-				return rightSuccessor(start->left);
+				return leftSuccessor(start->left);
 			else
 				return start;
 		}
-		static Node<T>* leftSuccessor(Node<T>* start) {
+		static Node<T>* rightSuccessor(Node<T>* start) {
 			if (start->right)
-				return leftSuccessor(start->right);
+				return rightSuccessor(start->right);
 			else
 				return start;
 		}
@@ -337,7 +336,7 @@ namespace dtd
 		// 지울공간이 leaf인경우 대체하지않고 부모의 dangling pointer을 처리하고 지움
 
 		// 자기자신을 반환
-		static Node<T>* remove_rec(Node<T>* node, T key) { // recursive
+		static Node<T>* remove_rec(Node<T>* node, const T& key) { // recursive
 			if (!node)
 				return nullptr;
 			if (key < node->val)
@@ -363,7 +362,19 @@ namespace dtd
 			}
 			return node;
 		}
-		void insert_
+		// 레퍼런스로 **효과
+		static void insert_ref(Node<T>*& node, const T& val) {
+			if (node == nullptr) {
+				node = new Node<T>(val);
+				return;
+			}
+			if (node->val < val) {
+				insert_ref(node->right, val);
+			}
+			else {
+				insert_ref(node->left, val);
+			}
+		}
 
 	public:
 		// O(log n)
@@ -375,19 +386,18 @@ namespace dtd
 		// O(Depth) -> O(log n)
 		void insert(T val) {
 			if (!root)
-				root = new Node<T>{ val, nullptr, nullptr };
-
+				root = new Node<T>(val);
+			else
+				insert_ref(root, val);
 		}
 		//  O(log n)
 		void remove(T key) {
 			root = remove_rec(root, key);
 		}
-		// O(N)
+		// O(N)???
 		void visit(std::function<void(const T&)> func) {
-			if (root)
-				visit_rec(root, func);
+			visit_rec(root, func);
 		}
 	};
-
 }
 #endif // !dlib_hpp

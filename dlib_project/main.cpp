@@ -55,20 +55,21 @@ public:
 };
 
 int main() {
-	dtd::BST<Student> bstree;
-	bstree.insert(Student(1230, "iii"));
-	bstree.insert(Student(1231, "bbb"));
-	bstree.insert(Student(1232, "ccc"));
-	bstree.insert(Student(1233, "ddd"));
-	bstree.insert(Student(1234, "eee"));
-	bstree.insert(Student(1235, "fff"));
-	bstree.insert(Student(1236, "eee"));
-	bstree.insert(Student(1237, "ccc"));
+	dtd::BST<Student> bsTree;
+	bsTree.insert(Student(1236, "eee"));
+	bsTree.insert(Student(1231, "bbb"));
+	bsTree.insert(Student(1232, "ccc"));
+	bsTree.insert(Student(1237, "ccc"));
+	bsTree.insert(Student(1233, "ddd"));
+	bsTree.insert(Student(1235, "fff"));
+	bsTree.insert(Student(1230, "aaa"));
+	bsTree.insert(Student(1234, "eee"));
 	// in-order 깊이우선 정렬된 결과
-	bstree.visit([](const Student& s) {cout << s << ","; });
+	bsTree.visit([](const Student& s) {cout << s << ","; });
 	cout << endl;
 	//bstree.remove({ 1233, "ddd" });
-	bstree.visit([](const Student& s) {cout << s << ","; });
+	//bstree.visit([](const Student& s) {cout << s << ","; });
+	cout << bsTree.find(Student(1233, "ddd"));
 	cout << endl;
 
 	
