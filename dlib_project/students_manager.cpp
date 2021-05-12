@@ -4,8 +4,6 @@
 //
 //  Create by ÀÓµ¿¿¹ on 2021/04/17.
 //
-
-
 #include <iostream>
 #include <algorithm>
 #include "dlib.h"

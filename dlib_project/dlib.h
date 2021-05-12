@@ -4,15 +4,14 @@
 //
 //  Create by 임동예 on 2021/04/17.
 //
-
 //#pragma once
 #ifndef dlib_hpp
 #define dlib_hpp
 
+#include<functional>
 #include <iostream>
 #include <queue>
 using namespace std;
-
 
 // old method
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
@@ -279,66 +278,114 @@ namespace dtd
 	// Binary Tree ( N-ary Tree )
 	// 빠른 탐색, 빠른 추가삭제
 	// 왼쪽 자식은 작고 오른쪽자식은 크다
+	template<typename T>
 	class BST {
-	public:
-		class Node {
-		public:
-			int val;
-			Node* left = nullptr;
-			Node* right = nullptr;
-			friend BST;
-		};
 	private:
-		Node* root = nullptr;
-		static Node* find_rec(Node* node, int key) {
-			if (!node) return nullptr;
+		template<typename T>
+		class Node {
+		private:
+			T val;
+			Node<T>* left = nullptr;
+			Node<T>* right = nullptr;
+			friend BST;
+		public:
+			Node(const T& _val = T(), Node<T>* _left = nullptr, Node<T>* _right = nullptr)
+				: val(_val), left(_left), right(_right) {}
+
+		};
+		Node<T>* root = nullptr;
+
+	private:
+		// pre-order
+		static Node<T>* find_rec(Node<T>* node, const T& key) {
+			if (node == nullptr) 
+				return nullptr;
 			if (key == node->val)
+				return node;
+			if(key < node->val)
 				return find_rec(node->left, key);
 			else
 				return find_rec(node->right, key);
 		}
-		// in-order
-		template<typename Func> // 함수포인터, 람다 모두 사용가능
-		static void vist_rec(Node* node, Func func) {
+		// in-order (left middle right)
+		// template<typename Func> // 함수포인터, 람다 모두 사용가능
+		static void visit_rec(Node<T>* node, std::function<void(const T&)> func) {
+			if (node == nullptr)
+				return;
+			if (node->left)
+				visit_rec(node->left, func)
+			func(node->val);
+			if (node->right)
+				visit_rec(node->right, func)
 
 		}
-		static Node* leftSuccessor(Node* node) {
-			return node;
+		// 지울 노드의, 오른쪽서브트리중 가장 왼쪽 or 왼쪽 서브트리중 가장 오른쪽
+		static Node<T>* rightSuccessor(Node<T>* start) {
+			if (start->left)
+				return rightSuccessor(start->left);
+			else
+				return start;
+		}
+		static Node<T>* leftSuccessor(Node<T>* start) {
+			if (start->right)
+				return leftSuccessor(start->right);
+			else
+				return start;
 		}
 		// remove할때 지우는공간을 successor(leaf)에서 복사하고 leaf는 지우기
 		// 자식이 하나이면 부모한테 자식으로 바뀌었다고 알려줌
 		// 지울공간이 leaf인경우 대체하지않고 부모의 dangling pointer을 처리하고 지움
-		static Node* remove_rec(Node* node, int key) {
+
+		// 자기자신을 반환
+		static Node<T>* remove_rec(Node<T>* node, T key) { // recursive
 			if (!node)
 				return nullptr;
 			if (key < node->val)
 				node->left = remove_rec(node->left, key);
 			else if (key > node->val)
 				node->right = remove_rec(node->right, key);
-			else if (!node->left) {
-				Node* ret = node->right;
+			else if (node->left == nullptr) {
+				Node<T>* ret = node->right;
 				delete node;
 				return ret;
-			} else if (!node->right) {
-				Node* ret = node->left;
+			} else if(node->right == nullptr) {
+				Node<T>* ret = node->left;
 				delete node;
 				return ret;
-			} else {
-				Node* succNode = leftSuccessor(node->right);
+			} else if (node->left == nullptr) { 
+				Node<T>* successorNode = leftSuccessor(node->right);
 				Node* left = node->left;
 				Node* right = node->right;
-				*node = *succNode;
+				node->val = successorNode->val;
 				node->left = left;
 				node->right = right;
-				node->right = remove_rec(node->right, succNode->val);
+				node->right = remove_rec(node->right, successorNode->val);
 			}
 			return node;
 		}
-		public:
-		void insert(int value) {
+		void insert_
+
+	public:
+		// O(log n)
+		T find(const T& key) {
+			Node<T>* found = find_rec(root, key);
+			if (found) return found->val;
+			else return T();
 		}
-		template<typename Func>
-		void visit(Func func) {
+		// O(Depth) -> O(log n)
+		void insert(T val) {
+			if (!root)
+				root = new Node<T>{ val, nullptr, nullptr };
+
+		}
+		//  O(log n)
+		void remove(T key) {
+			root = remove_rec(root, key);
+		}
+		// O(N)
+		void visit(std::function<void(const T&)> func) {
+			if (root)
+				visit_rec(root, func);
 		}
 	};
 
