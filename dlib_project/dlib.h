@@ -247,7 +247,7 @@ namespace dtd
 		// * level
 		static node* print2(node* r) {
 			if (!r) return nullptr;
-			queue<node*> q; // stack 이라면?
+			queue<node*> q; // stack 이라면???
 			q.push(r);
 			while (!q.empty()) {
 				const node* n = q.front();
@@ -276,8 +276,8 @@ namespace dtd
 	};
 
 	// Binary Tree ( N-ary Tree )
-	// 빠른 탐색, 빠른 추가삭제
-	// 왼쪽 자식은 작고 오른쪽자식은 크다
+	// fast search, fast add delete
+	// left is small, right is big
 	template<typename T>
 	class BST {
 	private:
@@ -294,7 +294,6 @@ namespace dtd
 
 		};
 		Node<T>* root = nullptr;
-
 	private:
 		// pre-order
 		static Node<T>* find_rec(Node<T>* node, const T& key) {
@@ -307,8 +306,9 @@ namespace dtd
 			else
 				return find_rec(node->right, key);
 		}
-		// in-order (left middle right)
-		// template<typename Func> // 함수포인터, 람다 모두 사용가능
+		// in-order (left middle right) sort effect
+		// template<typename Func> => use func pointer and ramda fuction
+		// new version => function<void(const T&)>
 		static void visit_rec(Node<T>* node, std::function<void(const T&)> func) {
 			if (node == nullptr)
 				return;
@@ -318,32 +318,29 @@ namespace dtd
 			if (node->right)
 				visit_rec(node->right, func);
 		}
-		// 지울 노드의, 오른쪽서브트리중 가장 왼쪽 or 왼쪽 서브트리중 가장 오른쪽
+		// right subtree of leftest leaf
 		static Node<T>* leftSuccessor(Node<T>* start) {
 			if (start->left)
 				return leftSuccessor(start->left);
 			else
 				return start;
 		}
+		// left subtree of rightest leaf
 		static Node<T>* rightSuccessor(Node<T>* start) {
 			if (start->right)
 				return rightSuccessor(start->right);
 			else
 				return start;
 		}
-		// remove할때 지우는공간을 successor(leaf)에서 복사하고 leaf는 지우기
-		// 자식이 하나이면 부모한테 자식으로 바뀌었다고 알려줌
-		// 지울공간이 leaf인경우 대체하지않고 부모의 dangling pointer을 처리하고 지움
-
-		// 자기자신을 반환
-		static Node<T>* remove_rec(Node<T>* node, const T& key) { // recursive
+		// recursive
+		static Node<T>* remove_rec(Node<T>* node, const T& key) { 
 			if (!node)
 				return nullptr;
-			if (key < node->val)
-				node->left = remove_rec(node->left, key);
-			else if (key > node->val)
-				node->right = remove_rec(node->right, key);
-			else if (node->left == nullptr) {
+			if (node->val > key)
+				node->left = remove_rec(node->left, key); // -- 1
+			else if (node->val < key)
+				node->right = remove_rec(node->right, key); // -- 2
+			else if (node->left == nullptr) { // both is null return null so it doesn't matter
 				Node<T>* ret = node->right;
 				delete node;
 				return ret;
@@ -351,18 +348,14 @@ namespace dtd
 				Node<T>* ret = node->left;
 				delete node;
 				return ret;
-			} else if (node->left == nullptr) { 
+			} else { // match key and left, right is contain
 				Node<T>* successorNode = leftSuccessor(node->right);
-				Node* left = node->left;
-				Node* right = node->right;
 				node->val = successorNode->val;
-				node->left = left;
-				node->right = right;
 				node->right = remove_rec(node->right, successorNode->val);
 			}
-			return node;
+			return node; // -- 1, 2 그대로 대입하기 위해
 		}
-		// 레퍼런스로 **효과
+		// Node*& is show **effect
 		static void insert_ref(Node<T>*& node, const T& val) {
 			if (node == nullptr) {
 				node = new Node<T>(val);
@@ -375,7 +368,6 @@ namespace dtd
 				insert_ref(node->left, val);
 			}
 		}
-
 	public:
 		// O(log n)
 		T find(const T& key) {
@@ -384,11 +376,14 @@ namespace dtd
 			else return T();
 		}
 		// O(Depth) -> O(log n)
-		void insert(T val) {
+		bool insert(T val) {
 			if (!root)
 				root = new Node<T>(val);
-			else
+			else if (find(val) == T())
 				insert_ref(root, val);
+			else // has same val
+				return false;
+			return true;
 		}
 		//  O(log n)
 		void remove(T key) {
