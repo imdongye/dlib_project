@@ -11,7 +11,7 @@
 #include<functional>
 #include <iostream>
 #include <queue>
-using namespace std;
+#include <stack>
 
 // old method
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
@@ -21,10 +21,10 @@ __inline T min(T a, T b) {
 	if (a < b) return a;
 	return b;
 }
-
+// template class definition is must in hpp file
 namespace dtd
 {
-	// template class definition is must in hpp file
+	// <단방향 링크드 리스트>
 	template<typename T>
 	class dfront_list {
 		template<typename T>
@@ -94,6 +94,7 @@ namespace dtd
 		}
 	};
 
+	// <가변길이 배열>
 	template <typename T>
 	class dvec {
 		T* data = nullptr;
@@ -140,6 +141,13 @@ namespace dtd
 		}
 		const T* end() const {
 			return data + n;
+		}
+		T front() const {
+			return data[0];
+		}
+		void pop_front() const{
+			this.erase(this.begin());
+			this.resize(this.size() - 1);
 		}
 		void resize(size_t k) {
 			T* newData = nullptr;
@@ -196,90 +204,93 @@ namespace dtd
 		}
 	};
 
-	// root, internal node, leaf node
-	// degrees : number of children
-	// level : distance from the root
-	// depth of tree : level of the deepest leaf
-	// subtree
-
+	// <트리>
 	class dtree {
-		class node {
+		/*
+		노드 종류 : root, internal node, leaf node
+		degrees : 자식의 개수
+		level : root까지의 거리
+		depth of tree : 가장 멀리있는 leef node의 level
+
+		static함수는 객체마다 가지고 있는것이 아니라 같은 클래스들끼리의 전역변수 같이 공용으로 사용되는것같다.
+		재귀함수로 찾기위해서는 매개변수로 현재의 root를 받아와야하고 그렇게되면 find함수안에서 자기자신을 참조하지않아 this포인터도 사용하지 않아서
+		static 정적 함수로 선언할수있고 객체마다 함수를 가지고 있지 않아도 돼서 메모리를 오버헤드를 줄일수있다(? ) 그리고 외부에는 pos만 받는 함수를 노출시켜
+		사용편의성도 챙길수있다.
+
+		* Pre - order traversal 부모먼저 검색 - 비교후 for
+		* Post - order traversal 자식먼저 검색 - for 후 비교
+		* Level order traversal 윗층부터 아래층으로 탐색(큐 사용)
+		* In - order traversal 우선순위가 왼쪽 부모 오른쪽(내림차순으로 출력)
+
+		깊이 Depth : pre, post, in
+		너비 Breath : level
+		*/
+	private:
+		class Node {
 			std::string position;
-			dvec<node*> branches;
+			dvec<Node*> branches;
 			friend class dtree;
 		public:
-			node(const std::string& pos) : position(pos) {}
-			~node() {}
+			Node(const std::string& pos) : position(pos) {}
+			~Node() {}
 		};
-		node* root = nullptr;
-
-		// static함수는 객체마다 가지고 있는것이 아니라 같은 클래스들끼리의 전역변수 같이 공용으로 사용되는것같다.
-		// 재귀함수로 찾기위해서는 매개변수로 현재의 root를 받아와야하고 그렇게되면 find함수안에서 자기자신을 참조하지않아 this포인터도 사용하지 않아서
-		// static 정적 함수로 선언할수있고 객체마다 함수를 가지고 있지 않아도 돼서 메모리를 오버헤드를 줄일수있다(?) 그리고 외부에는 pos만 받는 함수를 노출시켜
-		// 사용편의성도 챙길수있다.
-		// 
-		// * Pre-order traversal 부모먼저 검색 - 비교후 for
-		// * Post-order traversal 자식먼저 검색 - for 후 비교
-		// * Level order traversal 윗층부터 아래층으로 탐색 ( 큐 사용 )
-		// * In-order traversal 우선순위가 왼쪽 부모 오른쪽 ( 내림차순으로 출력 )
-		// 
-		// 깊이 Depth : pre, post, in
-		// 너비 Breath : level
+		Node* root = nullptr;
 
 		// * Pre-order traversal
-		static node* find(node* r, const std::string& pos) {
+		static Node* find(Node* r, const std::string& pos) {
 			if (r == nullptr)
 				return nullptr;
 			if (r->position.compare(pos) == 0)
 				return r;
-			for (node* child : r->branches) {
-				node* found = find(child, pos);
+			for (Node* child : r->branches) {
+				Node* found = find(child, pos);
 				if (found != nullptr) return found;
 			}
 			return nullptr;
 		}
 		// * post
-		static void print(node* r) {
-			for (node* child : r->branches)
+		static void print(Node* r) {
+			for (Node* child : r->branches)
 				print(child);
-			cout << r->position << endl;
+			std::cout << r->position << std::endl;
 		}
 		// * level
-		static node* print2(node* r) {
+		static Node* print2(Node* r) {
 			if (!r) return nullptr;
-			queue<node*> q; // stack 이라면???
+			std::queue<Node*> q; // stack 이라면???
 			q.push(r);
 			while (!q.empty()) {
-				const node* n = q.front();
+				const Node* n = q.front();
 				q.pop();
-				cout << n->position << " " << endl;
-				for (node* branch : n->branches)
+				std::cout << n->position << " " << std::endl;
+				for (Node* branch : n->branches)
 					q.push(branch);
 			}
 		}
-		void print() {
-			print(root);
-		}
 	public:
 		dtree(const std::string& pos) {
-			root = new node(pos);
+			root = new Node(pos);
 		}
-		node* find(const std::string& pos) {
+		void print() {
+			print2(root);
+		}
+		Node* find(const std::string& pos) {
 			return find(root, pos);
 		}
 		bool addSub(const std::string& manager, const std::string& pos) {
-			node* managerNode = find(manager);
+			Node* managerNode = find(manager);
 			if (!managerNode) return false;
-			managerNode->branches.push_back(new node(pos));
+			managerNode->branches.push_back(new Node(pos));
 			return true;
 		}
 	};
 
-	// Binary Tree ( N-ary Tree )
-	// fast search, fast add delete
-	// left is small, right is big
+	// <이진 트리>
 	template<typename T>
 	class BST {
+		// Binary Tree ( N-ary Tree )
+		// fast search, fast add delete
+		// left is small, right is big
 	private:
 		template<typename T>
 		class Node {
@@ -297,11 +308,11 @@ namespace dtd
 	private:
 		// pre-order
 		static Node<T>* find_rec(Node<T>* node, const T& key) {
-			if (node == nullptr) 
+			if (node == nullptr)
 				return nullptr;
 			if (key == node->val)
 				return node;
-			if(key < node->val)
+			if (key < node->val)
 				return find_rec(node->left, key);
 			else
 				return find_rec(node->right, key);
@@ -333,7 +344,7 @@ namespace dtd
 				return start;
 		}
 		// recursive
-		static Node<T>* remove_rec(Node<T>* node, const T& key) { 
+		static Node<T>* remove_rec(Node<T>* node, const T& key) {
 			if (!node)
 				return nullptr;
 			if (node->val > key)
@@ -344,11 +355,13 @@ namespace dtd
 				Node<T>* ret = node->right;
 				delete node;
 				return ret;
-			} else if(node->right == nullptr) {
+			}
+			else if (node->right == nullptr) {
 				Node<T>* ret = node->left;
 				delete node;
 				return ret;
-			} else { // match key and left, right is contain
+			}
+			else { // match key and left, right is contain
 				Node<T>* successorNode = leftSuccessor(node->right);
 				node->val = successorNode->val;
 				node->right = remove_rec(node->right, successorNode->val);
@@ -394,5 +407,91 @@ namespace dtd
 			visit_rec(root, func);
 		}
 	};
+
+	// <이진 탐색>
+	template<typename IT, typename T>
+	IT search(const T& val, IT first, IT last) {
+		if (first == last) return last;
+		IT center = first;
+		advance(center, floor(distance(first, last) / 2));
+		if (*center == val) return center;
+		else if (*center > val) {
+			IT found = serch(val, first, center);
+			if (found == center) return last;
+			else return found;
+		}
+		else
+			return search(val, ++center, last);
+	};
+	// 정렬된 부분 합치기
+	template<typename T>
+	dvec<T>merge(const dvec<T>& a, const dvec<T>& b) {
+		dvec<T> merged;
+		T* it1 = a.begin();
+		T* it2 = b.begin();
+		while (it1 != a.end() || it2 != b.end()) {
+			if (it1 != a.end() && (it2 == b.end || *it1 < *(it2)))
+				merged.push_back(*it1++);
+			else
+				merged.push_back(*it2++);
+		}
+		return merged;
+	};
+	template<typename T>
+	dvec<T> merge_sort(const dvec<T>& I) {
+		if (I.size() < 2) return I;
+		T* center = I.begin();
+		advance(center, floor(distance(I.begin(), I.end()) / 2));
+
+		// 프로그램 스택이 이전상황을 기억함
+		T* left = merge_sort(dvec<T>(I.begin(), center));
+		T* right = merge_sort(dvec<T>(center, I.end()));
+
+		return merge(left, right);
+	};
+
+	// <그래프>
+	template<typename T>
+	class Graph {
+		dvec<T> nodes;
+		//adjacency 인접 정보
+		dvec<dvec<int>> adjList;
+
+		void addNode(const T& t) {
+			nodes.push_back(t);
+			adjList.resize(nodes.size());
+		}
+		void addEdge(int from, int to) {
+			adjList[from].push_back(to);
+		}
+		void visitBFS(int start, std::function<bool(T&)> func) {
+			dvec<int> closed;
+			dvec<bool> visited(nodes.size(), false);
+
+			dvec<int> open;
+			open.push_back(start);
+			while (!open.empty()) {
+				int theNode = open.front();
+				open.pop_front();
+				if (func(nodes[theNode]) == true)
+					break;
+				closed.push_back(theNode);
+				for (int to : adjList[theNode])
+					if (find(open.begin(), open.end(), to) == open.end()
+						&& find(closed.begin(), closed.end(), to) == closed.end())
+						open.push_back(to);
+			}
+		}
+	};
 }
+
+
+
 #endif // !dlib_hpp
+
+/* Todo:
+*	c++ array initialization
+*	c++ struct initialization
+*	스택 큐 구현
+*	트리, 그래프, 정렬, 시간복잡도
+*/
