@@ -10,8 +10,11 @@
 
 #include<functional>
 #include <iostream>
+#include <string>
+
 #include <queue>
 #include <stack>
+#include <vector>
 
 // old method
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
@@ -21,6 +24,7 @@ __inline T min(T a, T b) {
 	if (a < b) return a;
 	return b;
 }
+
 // template class definition is must in hpp file
 namespace dtd
 {
@@ -99,17 +103,24 @@ namespace dtd
 	class dvec {
 		T* data = nullptr;
 		// size_t == unsigned int
+		T init;
 		size_t n;
 		size_t capacity;
-		static const size_t more_size = 10;
+		static const size_t SPARE_SIZE = 10;
 	public:
-		dvec() : n(0) {
-			capacity = n + more_size;
+		dvec() : n(0), init(T()) {
+			capacity = n + SPARE_SIZE;
 			data = new T[capacity];
 		}
 		dvec(size_t _n) : n(_n) {
-			capacity = n + more_size;
-			data = new T[n + capacity];
+			capacity = n + SPARE_SIZE;
+			data = new T[capacity];
+		}
+		dvec(size_t _n, T _init) : n(_n), init(_init) {
+			capacity = n + SPARE_SIZE;
+			data = new T[capacity];
+			for (int i = 0; i < capacity; i++)
+				data[i] = init;
 		}
 		~dvec() {
 			if (data != nullptr)
@@ -152,10 +163,15 @@ namespace dtd
 		void resize(size_t k) {
 			T* newData = nullptr;
 			if (k > capacity) {
-				capacity = k + more_size;
+				capacity = k + SPARE_SIZE;
 				newData = new T[capacity];
-				for (size_t i = 0; i < n; i++)
-					newData[i] = data[i];
+				for (size_t i = 0; i < capacity; i++) {
+					if (i < n)
+						newData[i] = data[i];
+					else
+						newData[i] = init;
+				}
+					
 				if (data) delete[] data;
 				data = newData;
 				n = k;
@@ -437,6 +453,7 @@ namespace dtd
 		}
 		return merged;
 	};
+	// 재귀상용하지 않고 Joma ??
 	template<typename T>
 	dvec<T> merge_sort(const dvec<T>& I) {
 		if (I.size() < 2) return I;
@@ -454,32 +471,111 @@ namespace dtd
 	template<typename T>
 	class Graph {
 		dvec<T> nodes;
-		//adjacency 인접 정보
-		dvec<dvec<int>> adjList;
+		// **non-weight
+		// adjacency list
+		//dvec<dvec<int>> adjList;
+		// adjacency matrix
+		//bool adjMat[100][100];
+		// **weight 
+		dvec<dvec<std::pair<int, float>>> adjList;
+		//float adjMat[100][100];
 
-		void addNode(const T& t) {
-			nodes.push_back(t);
+	public:
+		void addNode(const T& v) {
+			nodes.push_back(v);
 			adjList.resize(nodes.size());
 		}
-		void addEdge(int from, int to) {
-			adjList[from].push_back(to);
+		void addEdge(int from, int to, float w) {
+			adjList[from].push_back({ to,w });
+			//both side pointer
+			adjList[to].push_back({ from,w });
 		}
-		void visitBFS(int start, std::function<bool(T&)> func) {
-			dvec<int> closed;
-			dvec<bool> visited(nodes.size(), false);
-
-			dvec<int> open;
+		void addEdges(int from, const std::vector<std::pair<int, float>>& to_s) {
+			for (auto to : to_s)
+				addEdge(from, to.first, to.second);
+		}
+		// O(N) breath first search traversal
+		void BFS(int start, std::function<bool(int, const T&)> func) {
+			dvec<bool> closed(nodes.size(), false);
+			std::deque<int> open;
 			open.push_back(start);
 			while (!open.empty()) {
 				int theNode = open.front();
 				open.pop_front();
-				if (func(nodes[theNode]) == true)
+				closed[theNode] = true;
+				if (func(theNode, nodes[theNode]) == true)
 					break;
-				closed.push_back(theNode);
-				for (int to : adjList[theNode])
-					if (find(open.begin(), open.end(), to) == open.end()
-						&& find(closed.begin(), closed.end(), to) == closed.end())
-						open.push_back(to);
+				for (std::pair<int, float> e : adjList[theNode]) {
+					int dst = e.first;
+					float w = e.second;
+					if (!closed[dst] &&
+						std::find(open.begin(), open.end(), dst) == open.end())
+						open.push_back(dst);
+				}
+			}
+		}
+		// 깊이 우선 탐색 depth first traversal
+		void DFS(int start, std::function<bool(int, const T&)> func) {
+			dvec<bool> closed(nodes.size(), false);
+			std::deque<int> open;
+			open.push_front(start);
+			while (!open.empty()) {
+				int theNode = open.front();
+				open.pop_front();
+				closed[theNode] = true;
+				if (func(theNode, nodes[theNode]) == true)
+					break;
+				for (std::pair<int, float> e : adjList[theNode]) {
+					int dst = e.first;
+					float w = e.second;
+					if (!closed[dst] &&
+						std::find(open.begin(), open.end(), dst) == open.end())
+						open.push_front(dst);
+				}
+			}
+		}
+		// weighted graph
+		// 최소 비용 연결 문제
+		// 사이클이 없음 = 트리
+		// spanning한다
+
+		// -Prim's Algorithm
+		// val: 지금까지 알려져있는 트리까지 거리. 초기값:무한. 시작노드:0
+		// Min Spanning Tree
+		class MST_NodeInfo {
+		public:
+			int node;
+			float dist;
+		};
+		class MST_NodeCompare {
+		public:
+			bool operator() (const MST_NodeInfo& a, const MST_NodeInfo& b) {
+				return a.dist > b.dist;
+			}
+		};
+		void MST() {
+			dvec<bool> visited(nodes.size(), false);
+			dvec<float> distance(nodes.size(), 1E20);
+			dvec<int> parent(nodes.size(), -1);
+			std::priority_queue<MST_NodeInfo, std::vector<MST_NodeInfo>, MST_NodeCompare> queue;
+
+			int s = 0;
+			distance[s] = 0;
+			queue.push({ s,0 });
+			int counter = 0;
+			while (counter < nodes.size()) {
+				auto [theNode, w] = queue.top(); // decomposition ??? auto 의 자료형은?
+				queue.pop();
+				counter++;
+				visited[theNode] = true;
+				std::cout << parent[theNode] << "->" << theNode<<std::endl;
+				for (auto [dst, edgeDist] : adjList[theNode]) {
+					if (distance[dst] > edgeDist) {
+						distance[dst] = edgeDist;
+						parent[dst] = theNode;
+						queue.push({ dst,distance[dst] });
+					}
+				}
 			}
 		}
 	};
