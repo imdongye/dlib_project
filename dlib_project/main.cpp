@@ -27,7 +27,8 @@ int main() {
 	graph.addEdges(4, { {5,4},{7,5} });
 	graph.addEdges(6, { {7,6} });
 
-	graph.DFS(0, [](int, const int& t) {std::cout << t << ' '; return false; });
+	//graph.DFS(0, [](int, const int& t) {std::cout << t << ' '; return false; });
 	graph.MST();
+	
 	return 0;
 }

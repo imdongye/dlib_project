@@ -235,8 +235,8 @@ namespace dtd
 
 		* Pre - order traversal 부모먼저 검색 - 비교후 for
 		* Post - order traversal 자식먼저 검색 - for 후 비교
-		* Level order traversal 윗층부터 아래층으로 탐색(큐 사용)
 		* In - order traversal 우선순위가 왼쪽 부모 오른쪽(내림차순으로 출력)
+		* Level order traversal 윗층부터 아래층으로 탐색(큐 사용)
 
 		깊이 Depth : pre, post, in
 		너비 Breath : level
@@ -270,11 +270,17 @@ namespace dtd
 				print(child);
 			std::cout << r->position << std::endl;
 		}
+	public:
+		dtree(const std::string& pos) {
+			root = new Node(pos);
+		}
+		void print() {
+			print(root);
+		}
 		// * level
-		static Node* print2(Node* r) {
-			if (!r) return nullptr;
+		void printLevelOrder() {
 			std::queue<Node*> q; // stack 이라면???
-			q.push(r);
+			q.push(root);
 			while (!q.empty()) {
 				const Node* n = q.front();
 				q.pop();
@@ -282,13 +288,6 @@ namespace dtd
 				for (Node* branch : n->branches)
 					q.push(branch);
 			}
-		}
-	public:
-		dtree(const std::string& pos) {
-			root = new Node(pos);
-		}
-		void print() {
-			print2(root);
 		}
 		Node* find(const std::string& pos) {
 			return find(root, pos);
@@ -322,7 +321,7 @@ namespace dtd
 		};
 		Node<T>* root = nullptr;
 	private:
-		// pre-order
+		// pre-order logn
 		static Node<T>* find_rec(Node<T>* node, const T& key) {
 			if (node == nullptr)
 				return nullptr;
@@ -423,6 +422,10 @@ namespace dtd
 			visit_rec(root, func);
 		}
 	};
+	template<typename T>
+	class Heap {
+
+	};
 
 	// <이진 탐색>
 	template<typename IT, typename T>
@@ -439,7 +442,7 @@ namespace dtd
 		else
 			return search(val, ++center, last);
 	};
-	// 정렬된 부분 합치기
+	// <병합 정렬>
 	template<typename T>
 	dvec<T>merge(const dvec<T>& a, const dvec<T>& b) {
 		dvec<T> merged;
@@ -479,7 +482,6 @@ namespace dtd
 		// **weight 
 		dvec<dvec<std::pair<int, float>>> adjList;
 		//float adjMat[100][100];
-
 	public:
 		void addNode(const T& v) {
 			nodes.push_back(v);
@@ -514,7 +516,7 @@ namespace dtd
 				}
 			}
 		}
-		// 깊이 우선 탐색 depth first traversal
+		// 깊이 우선 탐색 depth first traversal ??? 재귀로
 		void DFS(int start, std::function<bool(int, const T&)> func) {
 			dvec<bool> closed(nodes.size(), false);
 			std::deque<int> open;
@@ -539,21 +541,24 @@ namespace dtd
 		// 사이클이 없음 = 트리
 		// spanning한다
 
-		// -Prim's Algorithm
+		// Prim's Algorithm 트리에서의 거리
+		// 다익스트라 경로저장 시작점에서의 거리
 		// val: 지금까지 알려져있는 트리까지 거리. 초기값:무한. 시작노드:0
 		// Min Spanning Tree
-		class MST_NodeInfo {
-		public:
+	private:
+		struct MST_NodeInfo {
 			int node;
 			float dist;
 		};
-		class MST_NodeCompare {
-		public:
+		struct MST_NodeCompare {
 			bool operator() (const MST_NodeInfo& a, const MST_NodeInfo& b) {
 				return a.dist > b.dist;
 			}
 		};
+	public:
+		//Prim’s Algorithm
 		void MST() {
+			// flag 우체통 깃발
 			dvec<bool> visited(nodes.size(), false);
 			dvec<float> distance(nodes.size(), 1E20);
 			dvec<int> parent(nodes.size(), -1);
@@ -562,23 +567,72 @@ namespace dtd
 			int s = 0;
 			distance[s] = 0;
 			queue.push({ s,0 });
-			int counter = 0;
+			int counter = 1;
 			while (counter < nodes.size()) {
-				auto [theNode, w] = queue.top(); // decomposition ??? auto 의 자료형은?
+				auto [theNode, w] = queue.top(); // c++17 decomposition ??? auto 의 자료형은?
 				queue.pop();
-				counter++;
-				visited[theNode] = true;
-				std::cout << parent[theNode] << "->" << theNode<<std::endl;
-				for (auto [dst, edgeDist] : adjList[theNode]) {
-					if (distance[dst] > edgeDist) {
-						distance[dst] = edgeDist;
-						parent[dst] = theNode;
-						queue.push({ dst,distance[dst] });
+				if (visited[theNode] == false) {
+					counter++;
+					visited[theNode] = true;
+					std::cout << parent[theNode] << "->" << theNode << std::endl;
+					for (auto [dst, edgeDist] : adjList[theNode]) {
+						if (distance[dst] > edgeDist) {
+							distance[dst] = edgeDist;
+							parent[dst] = theNode;
+							queue.push({ dst,distance[dst] });
+						}
 					}
 				}
 			}
 		}
+		//gridy
+		//다익스트라는 counter 가아닌 queue가 empty 일때 destination node 도착했을때
+		dvec<T> Dijkstra(int start, int end) {
+			dvec<bool> visited(nodes.size(), false);
+			dvec<float> sDist(nodes.size(), 1E20);
+			dvec<int> parent(nodes.size(), -1);
+			std::priority_queue<MST_NodeInfo, std::vector<MST_NodeInfo>, MST_NodeCompare> queue;
+
+			queue.push({ start,0 });
+			while (queue.empty()) {
+				auto [cur, w] = queue.top();
+				queue.pop();
+				if (visited[cur] == false) {
+					visited[cur] = true;
+					if (cur == end) {// 성공
+						dvec<T> v;
+						int c = end;
+						v.push_back(nodes[c]);
+						while (c != start) {
+							c = parent[c];
+							v.push_back(nodes[c]);
+						}
+						std::reverse(v.begin(), v.end());
+						return v;
+					}
+					for (auto [dst, edgeDist] : adjList[cur]) {
+						// 시작점에서 거리
+						float compDist = sDist[cur] + edgeDist;
+						if (sDist[dst] > compDist) {
+							sDist[dst] = compDist;
+							parent[dst] = cur;
+							queue.push({ dst,sDist[dst] });
+						}
+					}
+				}
+			}
+			// 실패
+			return dvec<T>();
+		}
 	};
+	// 힙 강의자료 다시보기
+	// 해시테이블
+	// 블룸필터
+	// 푸리에 변환
+	// 부동소수점 비교 문제 용어
+
+	// hashtable load factor
+	// hash값 겹치면 chaining, open addressing(linear probing)
 }
 
 
