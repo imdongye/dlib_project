@@ -122,9 +122,32 @@ namespace dtd
 			for (int i = 0; i < capacity; i++)
 				data[i] = init;
 		}
+		dvec(const dvec<T>& p) {
+			// data = p.data를 하게되면 큰 오류 발생
+			// p.data의 할당된공간이 heap memory가 아닌
+			// stack이라면 공간은 언젠가 없어질수있고
+			// 이 벡터의 소멸자가 실행될때 data에 주소는 있지만
+			// 유효하지 않은 주소라서 시스템 오류가 발생하고
+			// 원인을 찾기도 힘듬
+			// 복사생성자 검색할것
+			data = new T[sizeof(p.data)];
+			memcpy(data, p.data, sizeof(p.data)*sizeof(T));
+			init = p.init;
+			n = p.n;
+			capacity = p.capacity;
+		}
 		~dvec() {
 			if (data != nullptr)
 				delete[] data;
+		}
+		friend bool operator == (const dvec<T>& a, const dvec<T>& b) {
+			if (a.size() != b.size())
+				return false;
+			for (int i = 0; i < a.size(); i++) {
+				if (a[i] != b[i])
+					return false;
+			}
+			return true;
 		}
 		T& operator [] (size_t k) {
 			return data[k];
@@ -171,8 +194,8 @@ namespace dtd
 					else
 						newData[i] = init;
 				}
-					
-				if (data) delete[] data;
+				if (data != nullptr) 
+					delete[] data;
 				data = newData;
 				n = k;
 			}
@@ -368,12 +391,14 @@ namespace dtd
 				node->right = remove_rec(node->right, key); // -- 2
 			else if (node->left == nullptr) { // both is null return null so it doesn't matter
 				Node<T>* ret = node->right;
-				delete node;
+				if(node)
+					delete node;
 				return ret;
 			}
 			else if (node->right == nullptr) {
 				Node<T>* ret = node->left;
-				delete node;
+				if(node)
+					delete node;
 				return ret;
 			}
 			else { // match key and left, right is contain
@@ -567,7 +592,7 @@ namespace dtd
 			int s = 0;
 			distance[s] = 0;
 			queue.push({ s,0 });
-			int counter = 1;
+			int counter = 0; // 왜 0 이 안되는 지
 			while (counter < nodes.size()) {
 				auto [theNode, w] = queue.top(); // c++17 decomposition ??? auto 의 자료형은?
 				queue.pop();
@@ -593,22 +618,22 @@ namespace dtd
 			dvec<int> parent(nodes.size(), -1);
 			std::priority_queue<MST_NodeInfo, std::vector<MST_NodeInfo>, MST_NodeCompare> queue;
 
+			dvec<T> result;
+			sDist[start] = 0;
 			queue.push({ start,0 });
-			while (queue.empty()) {
+			while (queue.empty() == false) {
 				auto [cur, w] = queue.top();
 				queue.pop();
 				if (visited[cur] == false) {
 					visited[cur] = true;
 					if (cur == end) {// 성공
-						dvec<T> v;
 						int c = end;
-						v.push_back(nodes[c]);
-						while (c != start) {
+						while (c != -1) {
+							result.push_back(nodes[c]);
 							c = parent[c];
-							v.push_back(nodes[c]);
 						}
-						std::reverse(v.begin(), v.end());
-						return v;
+						std::reverse(result.begin(), result.end());
+						return  result;
 					}
 					for (auto [dst, edgeDist] : adjList[cur]) {
 						// 시작점에서 거리
@@ -616,13 +641,13 @@ namespace dtd
 						if (sDist[dst] > compDist) {
 							sDist[dst] = compDist;
 							parent[dst] = cur;
-							queue.push({ dst,sDist[dst] });
+							queue.push({ dst, sDist[dst] });
 						}
 					}
 				}
 			}
 			// 실패
-			return dvec<T>();
+			return result;
 		}
 	};
 	// 힙 강의자료 다시보기

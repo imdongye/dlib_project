@@ -5,20 +5,12 @@
 //  Create by 임동예 on 2021/04/17.
 //
 #include "dlib.h"
-using namespace std;
 
 
 int main() {
 	dtd::Graph<int> graph;
-	graph.addNode(0);
-	graph.addNode(1);
-	graph.addNode(2);
-	graph.addNode(3);
-	graph.addNode(4);
-	graph.addNode(5);
-	graph.addNode(6);
-	graph.addNode(7);
-	graph.addNode(8);
+	for (int i = 0; i < 8; i++)
+		graph.addNode(i);
 
 	graph.addEdges(0, { {1,1},{2,3} });
 	graph.addEdges(1, { {2,7},{3,4},{5,1.2} });
@@ -28,7 +20,14 @@ int main() {
 	graph.addEdges(6, { {7,6} });
 
 	//graph.DFS(0, [](int, const int& t) {std::cout << t << ' '; return false; });
-	graph.MST();
-	
+	//std::cout << "\n\n";
+	//graph.MST();
+	dtd::dvec<int> path = graph.Dijkstra(0, 8);
+	if (path == dtd::dvec<int>())
+		std::cout << "실패";
+	else
+		for (int i = 0; i < path.size(); i++)
+			std::cout << path[i] << std::endl;
+
 	return 0;
 }
