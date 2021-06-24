@@ -1,11 +1,3 @@
-//
-//  dlib.h
-//  Build my data structures
-//
-//  Create by 임동예 on 2021/04/17.
-//
-//#pragma once
-#ifndef dlib_hpp
 #define dlib_hpp
 
 #include<functional>
@@ -101,27 +93,23 @@ namespace dtd
 	// <가변길이 배열>
 	template <typename T>
 	class dvec {
+		friend class dvec;
+		size_t n = 0;
+		size_t capacity = 0;
 		T* data = nullptr;
-		// size_t == unsigned int
-		T init;
-		size_t n;
-		size_t capacity;
-		static const size_t SPARE_SIZE = 10;
 	public:
-		dvec() : n(0), init(T()) {
-			capacity = n + SPARE_SIZE;
-			data = new T[capacity];
+		dvec() {
+			recapacity(21);
 		}
 		dvec(size_t _n) : n(_n) {
-			capacity = n + SPARE_SIZE;
-			data = new T[capacity];
+			resize(n);
 		}
-		dvec(size_t _n, T _init) : n(_n), init(_init) {
-			capacity = n + SPARE_SIZE;
-			data = new T[capacity];
-			for (int i = 0; i < capacity; i++)
+		dvec(size_t _n, T init) : n(_n) {
+			resize(n);
+			for (int i = 0; i < n; i++)
 				data[i] = init;
 		}
+		// 복사생성자
 		dvec(const dvec<T>& p) {
 			// data = p.data를 하게되면 큰 오류 발생
 			// p.data의 할당된공간이 heap memory가 아닌
@@ -129,16 +117,22 @@ namespace dtd
 			// 이 벡터의 소멸자가 실행될때 data에 주소는 있지만
 			// 유효하지 않은 주소라서 시스템 오류가 발생하고
 			// 원인을 찾기도 힘듬
-			// 복사생성자 검색할것
-			data = new T[sizeof(p.data)];
-			memcpy(data, p.data, sizeof(p.data)*sizeof(T));
-			init = p.init;
+			if (p.data == nullptr)
+				return;
 			n = p.n;
 			capacity = p.capacity;
-		}
-		~dvec() {
+
 			if (data != nullptr)
 				delete[] data;
+			data = new T[capacity];
+			memcpy(data, p.data, sizeof(T) * n);
+		}
+		// 
+		virtual ~dvec() {
+			if (data != nullptr) {
+				delete[] data;
+				data = nullptr;
+			}
 		}
 		friend bool operator == (const dvec<T>& a, const dvec<T>& b) {
 			if (a.size() != b.size())
@@ -150,20 +144,23 @@ namespace dtd
 			return true;
 		}
 		T& operator [] (size_t k) {
-			return data[k];
+			if (k < n)
+				return data[k];
+			throw "Index out of range";
 		}
 		const T& operator [] (const size_t k) const {
-			return data[k];
+			if (k < n)
+				return data[k];
+			throw "Index out of range";
 		}
-		T& at(size_t index) {
-			if (index < n)
-				return data[index];
+		T& at(size_t k) {
+			if (k < n)
+				return data[k];
 			throw "Index out of range";
 		}
 		size_t size() const {
 			return n;
 		}
-		// for( const auto& item : list ) == for( auto it = list.begin(); it!=list.end(); it++ )
 		T* begin() {
 			return data;
 		}
@@ -177,34 +174,27 @@ namespace dtd
 			return data + n;
 		}
 		T front() const {
-			return data[0];
+			return this[0];
 		}
-		void pop_front() const{
-			this.erase(this.begin());
-			this.resize(this.size() - 1);
+		void recapacity(size_t k = capacity) {
+			capacity = k;
+			T* newData = new T[capacity];
+			for (size_t i = 0; i < n; i++) {
+				newData[i] = data[i];
+			}
+			if (data != nullptr)
+				delete[] data;
+			data = newData;
 		}
 		void resize(size_t k) {
-			T* newData = nullptr;
-			if (k > capacity) {
-				capacity = k + SPARE_SIZE;
-				newData = new T[capacity];
-				for (size_t i = 0; i < capacity; i++) {
-					if (i < n)
-						newData[i] = data[i];
-					else
-						newData[i] = init;
-				}
-				if (data != nullptr) 
-					delete[] data;
-				data = newData;
-				n = k;
+			if (k >= capacity) {
+				recapacity(2 * k);
 			}
-			else {
-				for (int i = k; i < n; i++) {
-					data[i] = T();
-				}
-				n = k;
-			}
+			n = k;
+		}
+		void pop_front() const { // O(n)
+			this.erase(this.begin());
+			resize(n - 1);
 		}
 		void push_back(const T& a) {
 			resize(n + 1);
@@ -214,22 +204,22 @@ namespace dtd
 			if (it == end())
 				return false;
 			// O(N)
-			for (; it + 1 != end(); it++) {
+			for (; it + 1 != end(); it++)
 				*it = *(it + 1);
-			}
 			resize(n - 1);
-			return true;
-		}
-		bool erase_with_remove_if(T* it) {
-			// remove_if is finded ojb sort back and return leftest find obj 
-			int en = end() - it; // how much erase obj, it can't use with find_if
-			if (it == end())
-				return false;
-			resize(n - en);
 			return true;
 		}
 		bool erase(T* begin, T* end) {
 			// 예정
+		}
+		bool erase_with_remove_if(T* it) {
+			// remove_if는 검색된 요소를 마지막으로 정렬하고
+			// 그중 가장 왼쪽 이터레이터를 반환
+			int en = end() - it;
+			if (it == end())
+				return false;
+			resize(n - en);
+			return true;
 		}
 		void insert(const T* it, const T& a) {
 			// 예정
@@ -391,13 +381,13 @@ namespace dtd
 				node->right = remove_rec(node->right, key); // -- 2
 			else if (node->left == nullptr) { // both is null return null so it doesn't matter
 				Node<T>* ret = node->right;
-				if(node)
+				if (node)
 					delete node;
 				return ret;
 			}
 			else if (node->right == nullptr) {
 				Node<T>* ret = node->left;
-				if(node)
+				if (node)
 					delete node;
 				return ret;
 			}
@@ -495,6 +485,18 @@ namespace dtd
 		return merge(left, right);
 	};
 
+	template<typename T1, typename T2>
+	class pair {
+	public:
+		T1 first;
+		T2 second;
+		pair() {
+		}
+		pair(T1 f, T2 s) {
+			first = f;
+			second = s;
+		}
+	};
 	// <그래프>
 	template<typename T>
 	class Graph {
@@ -505,7 +507,7 @@ namespace dtd
 		// adjacency matrix
 		//bool adjMat[100][100];
 		// **weight 
-		dvec<dvec<std::pair<int, float>>> adjList;
+		dvec<dvec<pair<int, float>>> adjList;
 		//float adjMat[100][100];
 	public:
 		void addNode(const T& v) {
@@ -513,9 +515,9 @@ namespace dtd
 			adjList.resize(nodes.size());
 		}
 		void addEdge(int from, int to, float w) {
-			adjList[from].push_back({ to,w });
+			adjList[from].push_back(pair(to, w));
 			//both side pointer
-			adjList[to].push_back({ from,w });
+			adjList[to].push_back(pair(from, w));
 		}
 		void addEdges(int from, const std::vector<std::pair<int, float>>& to_s) {
 			for (auto to : to_s)
@@ -659,14 +661,3 @@ namespace dtd
 	// hashtable load factor
 	// hash값 겹치면 chaining, open addressing(linear probing)
 }
-
-
-
-#endif // !dlib_hpp
-
-/* Todo:
-*	c++ array initialization
-*	c++ struct initialization
-*	스택 큐 구현
-*	트리, 그래프, 정렬, 시간복잡도
-*/
