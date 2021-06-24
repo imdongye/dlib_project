@@ -22,7 +22,7 @@ int main() {
 	//graph.DFS(0, [](int, const int& t) {std::cout << t << ' '; return false; });
 	//std::cout << "\n\n";
 	//graph.MST();
-	dtd::dvec<int> path = graph.Dijkstra(0, 8);
+	dtd::dvec<int> path = graph.Dijkstra(0, 4);
 	if (path == dtd::dvec<int>())
 		std::cout << "½ÇÆÐ";
 	else

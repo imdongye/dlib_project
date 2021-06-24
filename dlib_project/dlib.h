@@ -1,4 +1,4 @@
-#define dlib_hpp
+#pragma once
 
 #include<functional>
 #include <iostream>
@@ -101,33 +101,23 @@ namespace dtd
 		dvec() {
 			recapacity(21);
 		}
-		dvec(size_t _n) : n(_n) {
-			resize(n);
+		dvec(size_t _n) {
+			resize(_n);
 		}
-		dvec(size_t _n, T init) : n(_n) {
-			resize(n);
-			for (int i = 0; i < n; i++)
-				data[i] = init;
+		dvec(size_t _n, T init) {
+			resize(_n, init);
 		}
 		// 복사생성자
 		dvec(const dvec<T>& p) {
-			// data = p.data를 하게되면 큰 오류 발생
-			// p.data의 할당된공간이 heap memory가 아닌
-			// stack이라면 공간은 언젠가 없어질수있고
-			// 이 벡터의 소멸자가 실행될때 data에 주소는 있지만
-			// 유효하지 않은 주소라서 시스템 오류가 발생하고
-			// 원인을 찾기도 힘듬
 			if (p.data == nullptr)
 				return;
 			n = p.n;
 			capacity = p.capacity;
-
 			if (data != nullptr)
 				delete[] data;
 			data = new T[capacity];
 			memcpy(data, p.data, sizeof(T) * n);
 		}
-		// 
 		virtual ~dvec() {
 			if (data != nullptr) {
 				delete[] data;
@@ -186,9 +176,12 @@ namespace dtd
 				delete[] data;
 			data = newData;
 		}
-		void resize(size_t k) {
+		void resize(size_t k, T init = T()) {
 			if (k >= capacity) {
 				recapacity(2 * k);
+			}
+			for (size_t i = n; i < k; i++) {
+				data[i] = init;
 			}
 			n = k;
 		}
@@ -492,10 +485,7 @@ namespace dtd
 		T2 second;
 		pair() {
 		}
-		pair(T1 f, T2 s) {
-			first = f;
-			second = s;
-		}
+		pair(T1 f, T2 s) :first{ f }, second{ s } {}
 	};
 	// <그래프>
 	template<typename T>
@@ -506,8 +496,10 @@ namespace dtd
 		//dvec<dvec<int>> adjList;
 		// adjacency matrix
 		//bool adjMat[100][100];
-		// **weight 
-		dvec<dvec<pair<int, float>>> adjList;
+		// **weight
+
+		// # dvec<dvec> resize delete 문제
+		std::vector<dvec<pair<int, float>>> adjList;
 		//float adjMat[100][100];
 	public:
 		void addNode(const T& v) {
@@ -660,4 +652,11 @@ namespace dtd
 
 	// hashtable load factor
 	// hash값 겹치면 chaining, open addressing(linear probing)
+
+	/* Todo:
+	*	c++ array initialization
+	*	c++ struct initialization
+	*	스택 큐 구현
+	*	트리, 그래프, 정렬, 시간복잡도
+	*/
 }
