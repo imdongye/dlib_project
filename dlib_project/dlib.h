@@ -105,18 +105,29 @@ namespace dtd
 			resize(_n);
 		}
 		dvec(size_t _n, T init) {
-			resize(_n, init);
+			resize(_n);
+			for (int i = 0; i < n; i++)
+				data[i] = init;
 		}
 		// 복사생성자
 		dvec(const dvec<T>& p) {
 			if (p.data == nullptr)
 				return;
+			recapacity(p.capacity);
 			n = p.n;
-			capacity = p.capacity;
-			if (data != nullptr)
-				delete[] data;
-			data = new T[capacity];
-			memcpy(data, p.data, sizeof(T) * n);
+			for (auto i = 0; i < n; i++)
+				data[i] = p.data[i];
+		}
+		// data[i] = init;에 사용
+		dvec& operator = (const dvec<T>& p) {
+			//this->dvec(p); 왜안됨?
+			if (p.data == nullptr)
+				return *this;
+			recapacity(p.capacity);
+			n = p.n;
+			for (auto i = 0; i < n; i++)
+				data[i] = p.data[i];
+			return *this;
 		}
 		virtual ~dvec() {
 			if (data != nullptr) {
@@ -168,16 +179,21 @@ namespace dtd
 		}
 		void recapacity(size_t k = capacity) {
 			capacity = k;
-			T* newData = new T[capacity];
-			for (size_t i = 0; i < n; i++) {
-				newData[i] = data[i];
+			// 0사이즈로 동적할당하면 안됨.
+			if (k < 1) {
+				if (data != nullptr)
+					delete[] data;
+				return;
 			}
+			T* newData = new T[capacity];
+			for (auto i = 0; i < n; i++)
+				newData[i] = data[i];
 			if (data != nullptr)
 				delete[] data;
 			data = newData;
 		}
 		void resize(size_t k, T init = T()) {
-			if (k >= capacity) {
+			if (k > capacity) {
 				recapacity(2 * k);
 			}
 			for (size_t i = n; i < k; i++) {
@@ -202,9 +218,6 @@ namespace dtd
 			resize(n - 1);
 			return true;
 		}
-		bool erase(T* begin, T* end) {
-			// 예정
-		}
 		bool erase_with_remove_if(T* it) {
 			// remove_if는 검색된 요소를 마지막으로 정렬하고
 			// 그중 가장 왼쪽 이터레이터를 반환
@@ -213,6 +226,9 @@ namespace dtd
 				return false;
 			resize(n - en);
 			return true;
+		}
+		bool erase(T* begin, T* end) {
+			// 예정
 		}
 		void insert(const T* it, const T& a) {
 			// 예정
@@ -498,8 +514,7 @@ namespace dtd
 		//bool adjMat[100][100];
 		// **weight
 
-		// # dvec<dvec> resize delete 문제
-		std::vector<dvec<pair<int, float>>> adjList;
+		dvec<dvec<pair<int, float>>> adjList;
 		//float adjMat[100][100];
 	public:
 		void addNode(const T& v) {

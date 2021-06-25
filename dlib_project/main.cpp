@@ -12,6 +12,7 @@ int main() {
 	for (int i = 0; i < 8; i++)
 		graph.addNode(i);
 
+	// struct initialization
 	graph.addEdges(0, { {1,1},{2,3} });
 	graph.addEdges(1, { {2,7},{3,4},{5,1.2} });
 	graph.addEdges(2, { {3,2} });
